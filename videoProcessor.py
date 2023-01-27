@@ -2,31 +2,37 @@
 import os
 import sys
 import numpy as np
-from cv2          import cvtColor               as cv2_cvtColor
-from cv2          import split                  as cv2_split
-from cv2          import merge                  as cv2_merge
+from cv2          import cvtColor                   as cv2_cvtColor
+from cv2          import split                      as cv2_split
+from cv2          import merge                      as cv2_merge
 
-from cv2          import imread                 as cv2_imread
-from cv2          import imwrite                as cv2_imwrite
-from cv2          import bitwise_not            as cv2_bitwise_not
+from cv2          import imread                     as cv2_imread
+from cv2          import imwrite                    as cv2_imwrite
+from cv2          import bitwise_not                as cv2_bitwise_not
 
-from cv2          import COLOR_BGR2HSV          as cv2_COLOR_BGR2HSV
-from cv2          import COLOR_HSV2BGR          as cv2_COLOR_HSV2BGR
-from cv2          import IMREAD_COLOR           as cv2_IMREAD_COLOR
-from cv2          import VideoCapture           as cv2_VideoCapture
-from cv2          import VideoWriter            as cv2_VideoWriter
-from cv2          import VideoWriter_fourcc     as cv2_VideoWriter_fourcc
+from cv2          import ROTATE_90_CLOCKWISE        as cv2_ROTATE_90
+from cv2          import ROTATE_180                 as cv2_ROTATE_180
+from cv2          import ROTATE_90_COUNTERCLOCKWISE as cv2_ROTATE_270
 
-from cv2          import CAP_PROP_FPS           as cv2_CAP_PROP_FPS
-from cv2          import CAP_PROP_FRAME_WIDTH   as cv2_CAP_PROP_FRAME_WIDTH
-from cv2          import CAP_PROP_FRAME_HEIGHT  as cv2_CAP_PROP_FRAME_HEIGHT
-from cv2          import CAP_PROP_FRAME_COUNT   as cv2_CAP_PROP_FRAME_COUNT
-from cv2          import THRESH_BINARY          as cv2_THRESH_BINARY
-from cv2          import INTER_NEAREST          as cv2_INTER_NEAREST
-from cv2          import flip                   as cv2_flip
-from cv2          import resize                 as cv2_resize
-from cv2          import threshold              as cv2_threshold
-from cv2          import destroyAllWindows      as cv2_destroyAllWindows
+from cv2          import COLOR_BGR2HSV              as cv2_COLOR_BGR2HSV
+from cv2          import COLOR_HSV2BGR              as cv2_COLOR_HSV2BGR
+from cv2          import IMREAD_COLOR               as cv2_IMREAD_COLOR
+from cv2          import VideoCapture               as cv2_VideoCapture
+from cv2          import VideoWriter                as cv2_VideoWriter
+from cv2          import VideoWriter_fourcc         as cv2_VideoWriter_fourcc
+
+from cv2          import CAP_PROP_FPS               as cv2_CAP_PROP_FPS
+from cv2          import CAP_PROP_FRAME_WIDTH       as cv2_CAP_PROP_FRAME_WIDTH
+from cv2          import CAP_PROP_FRAME_HEIGHT      as cv2_CAP_PROP_FRAME_HEIGHT
+from cv2          import CAP_PROP_FRAME_COUNT       as cv2_CAP_PROP_FRAME_COUNT
+from cv2          import THRESH_BINARY              as cv2_THRESH_BINARY
+from cv2          import INTER_NEAREST              as cv2_INTER_NEAREST
+
+from cv2          import flip                       as cv2_flip
+from cv2          import rotate                     as cv2_rotate
+from cv2          import resize                     as cv2_resize
+from cv2          import threshold                  as cv2_threshold
+from cv2          import destroyAllWindows          as cv2_destroyAllWindows
 
 from PyQt5.QtCore import QObject, pyqtSignal, QCoreApplication
 
@@ -48,27 +54,49 @@ def imageInfo(img):
 		"channels"   : channels
 	}
 
+
+
+# class MediaProcessor(QObject):
+# 	status = pyqtSignal(float)
+# 	def __init__(self, parent=None):
+# 		super(MediaProcessor, self).__init__(parent)
+# 		self.run = True
+
+# 	def process(self, in_name, rotation:int=0, mirror:bool=False, binary:bool=False, grouping:bool=False, invert:bool=False, 
+# 		brightness_r:float = 1, offset_r:float = 0, brightness_g:float = 1, offset_g:float = 0, brightness_b:float = 1, offset_b:float = 0):
+
+
+# 		self.outname = in_name.split(".")[0] + f"{('_rotation%d' % rotation) if rotation > 0 else ''}" + \
+# 			f"{'_mirror'if mirror else ''}" + \
+# 			f"{'_binary'if binary else ''}" + f"{'_grouping'if grouping else ''}"+ f"{'_inv'if invert else ''}" + \
+# 			f"{('_bright_r%f' % brightness_r) if brightness_r else ''}" + f"{('_offset_r%f' % offset_r) if offset_r else ''}" + \
+# 			f"{('_bright_g%f' % brightness_g) if brightness_g else ''}" + f"{('_offset_g%f' % offset_g) if offset_g else ''}" + \
+# 			f"{('_bright_b%f' % brightness_b) if brightness_b else ''}" + f"{('_offset_b%f' % offset_b) if offset_b else ''}" 
+
+
+
 class VideoProcessor(QObject):
 	status = pyqtSignal(float)
 	def __init__(self, parent=None):
 		super(VideoProcessor, self).__init__(parent)
 		self.run = True
 
-	def process(self, in_name, flip:bool=False, mirror:bool=False, binary:bool=False, grouping:bool=False, invert:bool=False, 
+	def process(self, in_name, rotation:int=0, mirror:bool=False, binary:bool=False, grouping:bool=False, invert:bool=False, 
 		brightness_r:float = 1, offset_r:float = 0, brightness_g:float = 1, offset_g:float = 0, brightness_b:float = 1, offset_b:float = 0):
 
 		cap              = cv2_VideoCapture(in_name) 
 		info             = videoInfo(cap)
-		outname          = in_name.split(".")[0] + f"{'_flip'if flip else ''}"+ f"{'_mirror'if mirror else ''}" + \
-			f"{'_binary'if binary else ''}"+ f"{'_grouping'if grouping else ''}"+ f"{'_inv'if invert else ''}" + \
-			f"{('_bright_r%d' % brightness_r) if brightness_r else ''}" + f"{('_contrast_r%d' % contrast_r) if contrast_r else ''}" + \
-			f"{('_bright_g%d' % brightness_g) if brightness_g else ''}" + f"{('_contrast_g%d' % contrast_g) if contrast_g else ''}" + \
-			f"{('_bright_b%d' % brightness_b) if brightness_b else ''}" + f"{('_contrast_b%d' % contrast_b) if contrast_b else ''}" + \
+		outname          = in_name.split(".")[0] + f"{('_rotation%d' % rotation) if rotation > 0 else ''}" + \
+			f"{'_mirror'if mirror else ''}" + \
+			f"{'_binary'if binary else ''}" + f"{'_grouping'if grouping else ''}"+ f"{'_inv'if invert else ''}" + \
+			f"{('_bright_r%.1f' % brightness_r) if not(brightness_r == 1) else ''}" + f"{('_offset_r%.1f' % offset_r) if offset_r else ''}" + \
+			f"{('_bright_g%.1f' % brightness_g) if not(brightness_g == 1) else ''}" + f"{('_offset_g%.1f' % offset_g) if offset_g else ''}" + \
+			f"{('_bright_b%.1f' % brightness_b) if not(brightness_b == 1) else ''}" + f"{('_offset_b%.1f' % offset_b) if offset_b else ''}" + \
 			".mp4"
 		fourcc           = cv2_VideoWriter_fourcc(*'mp4v')
 		deflate_size     = (int(info["width"]/2), int(info["height"]/2))
 		inflate_size     = (info["width"], info["height"])
-		out              = cv2_VideoWriter(outname,fourcc, info["fps"], (info["width"], info["height"]))
+		out              = cv2_VideoWriter(outname,fourcc, info["fps"], (info["width"] if rotation == 0 else info["height"], info["height"] if rotation == 0 else info["width"]))
 		framecount       = info["framecount"]
 		fps              = info["fps"]
 		threshold        = 50
@@ -88,8 +116,8 @@ class VideoProcessor(QObject):
 					debugPrint(f"progress {progress:.1f}% | {in_name}") 
 					self.status.emit(progress)
 
-				if flip:
-					frame  = cv2_flip(frame,-1)
+				if rotation in [90, 180, 270]:
+					frame = cv2_rotate(frame, {90: cv2_ROTATE_90, 180: cv2_ROTATE_180, 270: cv2_ROTATE_270}[rotation])
 
 				if mirror:	
 					frame = cv2_flip(frame, 1)
@@ -145,12 +173,18 @@ class ImageProcessor(QObject):
 		super(ImageProcessor, self).__init__(parent)
 		self.run = True
 
-	def process(self, in_name, flip:bool=False, mirror:bool=False, binary:bool=False, grouping:bool=False, invert:bool=False,
+	def process(self, in_name, rotation:int=0, mirror:bool=False, binary:bool=False, grouping:bool=False, invert:bool=False,
 		brightness_r:float = 1, offset_r:float = 0, brightness_g:float = 1, offset_g:float = 0, brightness_b:float = 1, offset_b:float = 0):
 
 		img           = cv2_imread(in_name, cv2_IMREAD_COLOR)
 		info          = imageInfo(img)
-		outname       = in_name.split(".")[0] + f"{'_flip'if flip else ''}"+ f"{'_mirror'if mirror else ''}"+ f"{'_binary'if binary else ''}"+ f"{'_grouping'if grouping else ''}"+ f"{'_inv'if invert else ''}" + ".jpg"
+		outname       = in_name.split(".")[0] + f"{('_rotation%d' % rotation) if rotation > 0 else ''}" + \
+			f"{'_mirror'if mirror else ''}" + \
+			f"{'_binary'if binary else ''}" + f"{'_grouping'if grouping else ''}"+ f"{'_inv'if invert else ''}" + \
+			f"{('_bright_r%.1f' % brightness_r) if not(brightness_r == 1) else ''}" + f"{('_offset_r%.1f' % offset_r) if offset_r else ''}" + \
+			f"{('_bright_g%.1f' % brightness_g) if not(brightness_g == 1) else ''}" + f"{('_offset_g%.1f' % offset_g) if offset_g else ''}" + \
+			f"{('_bright_b%.1f' % brightness_b) if not(brightness_b == 1) else ''}" + f"{('_offset_b%.1f' % offset_b) if offset_b else ''}" + \
+			".jpg"
 
 		deflate_size  = (int(info["width"]/2), int(info["height"]/2))
 		inflate_size  = (info["width"], info["height"])
@@ -163,11 +197,11 @@ class ImageProcessor(QObject):
 		color_brightness = any( not(i == 1) for i in [brightness_r, brightness_g, brightness_b])
 		color_offset     = any( not(i == 0) for i in [offset_r,     offset_g,     offset_b])
 		color_process    = color_brightness or color_offset
+		rotation_proc    = rotation in [90, 180, 270]
+		total_operation  = sum([rotation_proc, mirror, binary, grouping, invert, color_process])
 
-		total_operation  = sum([flip, mirror, binary, grouping, invert, color_process])
-
-		if flip:
-			img  = cv2_flip(img,-1)
+		if rotation in [90, 180, 270]:
+			img = cv2_rotate(img, {90: cv2_ROTATE_90, 180: cv2_ROTATE_180, 270: cv2_ROTATE_270}[rotation])
 			current_proce = current_proce + 1
 			self.status.emit(current_proce/total_operation * 100)
 

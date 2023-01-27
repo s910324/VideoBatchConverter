@@ -1,7 +1,7 @@
 import os
 import sys
 from   PyQt5.Qt                 import Qt
-from   PyQt5.QtWidgets          import QLabel, QCheckBox, QPushButton, QGridLayout, QProgressBar, QListWidget, QListWidgetItem, QWidget, QApplication, QAbstractItemView, QSlider, QSpinBox, QDoubleSpinBox
+from   PyQt5.QtWidgets          import QButtonGroup, QLabel, QCheckBox, QPushButton, QHBoxLayout, QVBoxLayout, QGridLayout, QProgressBar, QListWidget, QListWidgetItem, QWidget, QApplication, QAbstractItemView, QSlider, QSpinBox, QDoubleSpinBox, QRadioButton
 from   PyQt5.QtCore             import QSize
 
 from   videoProcessor           import *
@@ -14,57 +14,94 @@ image_ext = ["PNG", "JPG", "JPEG"]
 class VideoConvertWidget(QWidget):
 	def __init__(self):
 		super().__init__()
-
 		self.runState          = False
 		self.currentProcessor  = None
-		self.task_listwidget   = TaskListView()
-		self.background_label  = QLabel("Drag / Drop media files")
-		self.flipVideo_check   = QCheckBox("flip video")
-		self.mirrorVideo_check = QCheckBox("mirrir video")
-		self.binaryVideo_check = QCheckBox("video binary")
-		self.groupPixel_check  = QCheckBox("pixel grouping")
-		self.colorInvert_check = QCheckBox("color invert")
-		self.colorTune_check   = QCheckBox("color tuning")
-		self.colorTune_widget  = ColorTuneWidget()
-		self.execute_button    = QPushButton("execute")
-		self.delete_button     = QPushButton("clear")
+		self.layout            = QVBoxLayout()
+
+		self.layout.addLayout (self.listUISetup())
+		self.layout.addLayout (self.geometryUISetup())
+		self.layout.addLayout (self.miscUISetup())
+		self.layout.addLayout (self.colorTuneUISetup())
+		self.layout.addLayout (self.executeUISetup())
+		self.setLayout(self.layout)
+		self.signalSetup()
+		self.resize(500,300)
+
+	def listUISetup(self):
 		self.float_layout      = QGridLayout()
-		self.layout            = QGridLayout()
-		self.colorTune_layout  = QGridLayout()
+		self.task_listwidget   = TaskListView()
+		self.background_label  = QLabel(f"Drag / Drop media files\n\nVideo: {', '.join([e.lower() for e in video_ext])}\nImage: {', '.join([e.lower() for e in image_ext])}")
+		self.delete_button     = QPushButton("clear")
 
-
+		self.delete_button.setFixedSize(45, 25)
 		self.background_label.setAlignment(Qt.AlignCenter)
-		self.background_label.setStyleSheet("font-size: 20px; color:#777777;")
-		self.setWindowTitle("Batch Video Converter")
+		self.background_label.setStyleSheet("font-size: 20px; color:#aaa;")
 		self.delete_button.clicked.connect(lambda : self.task_listwidget.clear())
 		self.task_listwidget.setDragDropMode(QAbstractItemView.DragDrop)
 		self.task_listwidget.setMinimumHeight(200)
-		uiFixedHeight = 35
 
 		self.float_layout.addWidget (self.background_label, 0, 0, 4, 4)
 		self.float_layout.addWidget (self.task_listwidget,  0, 0, 4, 4)
 		self.float_layout.addWidget (self.delete_button,    3, 3, 1, 1)
+		return self.float_layout
 
-		self.layout.addLayout(self.float_layout, 0, 0, 1, 5)
-		for index, widget in enumerate([self.flipVideo_check, self.mirrorVideo_check, self.binaryVideo_check, self.groupPixel_check, self.colorInvert_check]):
-			self.layout.addWidget (widget,  1, index, 1, 1)
+	def geometryUISetup(self):
+		self.geometry_layout    = QGridLayout()
+		self.rotation_0_radio   = QRadioButton("0   deg")
+		self.rotation_90_radio  = QRadioButton("90  deg")
+		self.rotation_180_radio = QRadioButton("180 deg")
+		self.rotation_270_radio = QRadioButton("270 deg")
+		self.rotation_group     = QButtonGroup()
+		for radio in [self.rotation_0_radio, self.rotation_90_radio, self.rotation_180_radio, self.rotation_270_radio]:
+			self.rotation_group.addButton (radio)
+
+		self.rotation_0_radio.setChecked(True)
+		self.geometry_layout.addWidget(self.rotation_0_radio,   0, 0, 1, 1)
+		self.geometry_layout.addWidget(self.rotation_90_radio,  0, 1, 1, 1)
+		self.geometry_layout.addWidget(self.rotation_180_radio, 0, 2, 1, 1)
+		self.geometry_layout.addWidget(self.rotation_270_radio, 0, 3, 1, 1)
+		return self.geometry_layout
+
+	def miscUISetup(self):
+		self.misc_layout        = QGridLayout()
+		self.mirrorVideo_check  = QCheckBox("mirrir video")
+		self.binaryVideo_check  = QCheckBox("video binary")
+		self.groupPixel_check   = QCheckBox("pixel grouping")
+		self.colorInvert_check  = QCheckBox("color invert")
+		uiFixedHeight           = 35
+
+		for index, widget in enumerate([self.mirrorVideo_check, self.binaryVideo_check, self.groupPixel_check, self.colorInvert_check]):
+			self.misc_layout.addWidget (widget,  0, index, 1, 1)
 			widget.setFixedHeight(uiFixedHeight)
 
-		self.layout.addLayout (self.colorTune_layout,   2, 0, 1, 5)
-		self.layout.addWidget (self.execute_button,     3, 1, 1, 3)
+		self.setWindowTitle("Batch Video Converter")
 
+		return self.misc_layout
+
+
+	def colorTuneUISetup(self):
+		self.colorTune_layout   = QGridLayout()
+		self.colorTune_check    = QCheckBox("color tuning")
+		self.colorTune_widget   = ColorTuneWidget()
 		self.colorTune_layout.addWidget (self.colorTune_check,   0, 0, 1, 5)
 		self.colorTune_layout.addWidget (self.colorTune_widget,  1, 0, 1, 5)
+		return self.colorTune_layout
+		
+	def executeUISetup(self):
+		self.execute_layout     = QHBoxLayout()
+		self.execute_button     = QPushButton("execute")
+		self.execute_layout.addStretch()
+		self.execute_layout.addWidget (self.execute_button)
+		self.execute_layout.addStretch()
+		return self.execute_layout
 
-		self.delete_button.setFixedSize(45, 25)
-		self.setLayout(self.layout)
-
+	def signalSetup(self):
 		self.colorTune_widget.setVisible(False)
 		self.colorTune_check.stateChanged.connect(lambda val : self.colorTune_widget.setVisible(val))
 		self.colorTune_check.stateChanged.connect(lambda val : self.colorTune_widget.reset() if val else lambda:None)
 		self.execute_button.clicked.connect(self.executeProcess)
-		self.resize(500,300)
-		
+
+
 	def closeEvent(self, event):
 		self.task_listwidget.model().modelReset.disconnect()
 		event.accept()
@@ -73,7 +110,13 @@ class VideoConvertWidget(QWidget):
 		self.setRunState(not(self.runState))
 		
 		if self.runState:
-			flipVideo   = self.flipVideo_check.isChecked()
+			rotateVideo = sum([
+				int(self.rotation_0_radio.isChecked())   *   0,
+				int(self.rotation_90_radio.isChecked())  *  90,
+				int(self.rotation_180_radio.isChecked()) * 180,
+				int(self.rotation_270_radio.isChecked()) * 270
+			])
+
 			mirrorVideo = self.mirrorVideo_check.isChecked()
 			binaryVideo = self.binaryVideo_check.isChecked()
 			groupPixel  = self.groupPixel_check.isChecked()
@@ -81,7 +124,7 @@ class VideoConvertWidget(QWidget):
 			colorTune   = self.colorTune_widget.getValue()
 
 			p = Process(target = self.videoProcess(
-				flip = flipVideo, mirror = mirrorVideo, binary = binaryVideo, grouping = groupPixel, invert = colorInvert,
+				rotation = rotateVideo, mirror = mirrorVideo, binary = binaryVideo, grouping = groupPixel, invert = colorInvert,
 				brightness_r = colorTune["red_brightness"],   offset_r = colorTune["red_offset"],
 				brightness_g = colorTune["green_brightness"], offset_g = colorTune["green_offset"],
 				brightness_b = colorTune["blue_brightness"],  offset_b = colorTune["blue_offset"]
@@ -130,7 +173,13 @@ class VideoConvertWidget(QWidget):
 	def setRunState(self, status):
 		self.runState = status
 		self.execute_button.setText("cancel" if status else "execute")
-		_ = [widget.setEnabled(not(self.runState)) for widget in [self.task_listwidget, self.flipVideo_check, self.binaryVideo_check, self.mirrorVideo_check, self.binaryVideo_check, self.groupPixel_check, self.colorInvert_check, self.delete_button]]
+		_ = [widget.setEnabled(not(self.runState)) for widget in [
+			self.task_listwidget, 
+			self.rotation_0_radio, self.rotation_90_radio, self.rotation_180_radio, self.rotation_270_radio,
+			self.mirrorVideo_check, self.binaryVideo_check, self.groupPixel_check, self.colorInvert_check, 
+			self.colorTune_check, self.colorTune_widget,
+			self.delete_button
+		]]
 
 class ColorTuneWidget(QWidget):
 	red_brightness_changed   = pyqtSignal(float)
@@ -316,8 +365,6 @@ class TaskListWidget(QWidget):
 	def setProgress(self, progress:int):
 		self.process_label.setText(f"{progress:d}%")
 		self.progress_bar.setValue(progress)
-
-
 
 class TaskListView(QListWidget):
 	def __init__(self, parent=None):
