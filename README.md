@@ -1,6 +1,6 @@
 # Video Batch Converter
 
-- Dependency: PyQt 5 / CV2
+- Dependency: PyQt 5.15.7 / opencv-python 4.6.0.66
 
 - Function: 
   - Rotate 90, 180, 270 degs
