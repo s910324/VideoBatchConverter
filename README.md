@@ -9,7 +9,7 @@
   - Pixel Grouping
   - Color tuning 
   
-- Compiled executable: W64 check release page
+- Compiled executable: W64 check release page [https://github.com/s910324/VideoBatchConverter/releases]
 - Compiled using Nutika 1.3.2
 - Nutika Compile CMD  python -m nuitka videoProcessorGUI.py --show-progress --standalone --plugin-enable=pyqt5 --windows-disable-console
 
