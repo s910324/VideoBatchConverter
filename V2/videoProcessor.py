@@ -63,9 +63,9 @@ class VideoProcessor(QObject):
 		self.run = True
 
 	def process(self, filePath,
-		r_flip:bool = False, r_mirror:bool = False, r_invert:bool = False, r_brightness:float = 1, r_offset:float = 0, r_shift_x:int = 0, r_shift_y:int = 0,
-		g_flip:bool = False, g_mirror:bool = False, g_invert:bool = False, g_brightness:float = 1, g_offset:float = 0, g_shift_x:int = 0, g_shift_y:int = 0,
-		b_flip:bool = False, b_mirror:bool = False, b_invert:bool = False, b_brightness:float = 1, b_offset:float = 0, b_shift_x:int = 0, b_shift_y:int = 0):
+		r_flip:bool = False, r_mirror:bool = False, r_invert:bool = False, r_gamma:float = 1, r_brightness:float = 1, r_offset:float = 0, r_shift_x:int = 0, r_shift_y:int = 0,
+		g_flip:bool = False, g_mirror:bool = False, g_invert:bool = False, g_gamma:float = 1, g_brightness:float = 1, g_offset:float = 0, g_shift_x:int = 0, g_shift_y:int = 0,
+		b_flip:bool = False, b_mirror:bool = False, b_invert:bool = False, b_gamma:float = 1, b_brightness:float = 1, b_offset:float = 0, b_shift_x:int = 0, b_shift_y:int = 0):
 
 		cap              = cv2_VideoCapture(filePath) 
 		info             = videoInfo(cap)
@@ -88,12 +88,11 @@ class VideoProcessor(QObject):
 					self.percentage.emit(progress)
 
 				frame = fprocessor.process(frame,
-					r_flip, r_mirror, r_invert, r_brightness, r_offset, r_shift_x, r_shift_y,
-					g_flip, g_mirror, g_invert, g_brightness, g_offset, g_shift_x, g_shift_y,
-					b_flip, b_mirror, b_invert, b_brightness, b_offset, b_shift_x, b_shift_y,
+					r_flip, r_mirror, r_invert, r_gamma, r_brightness, r_offset, r_shift_x, r_shift_y,
+					g_flip, g_mirror, g_invert, g_gamma, g_brightness, g_offset, g_shift_x, g_shift_y,
+					b_flip, b_mirror, b_invert, b_gamma, b_brightness, b_offset, b_shift_x, b_shift_y,
 				)
 				
-
 				out.write(frame)
 				
 			else:
@@ -105,6 +104,7 @@ class VideoProcessor(QObject):
 		cap.release()
 		out.release()
 		cv2_destroyAllWindows()
+		debugPrint(f"Video out : {outname}")
 		debugPrint("done")
 
 class ImageProcessor(QObject):
@@ -114,9 +114,9 @@ class ImageProcessor(QObject):
 		self.run = True
 
 	def process(self, filePath,
-		r_flip:bool = False, r_mirror:bool = False, r_invert:bool = False, r_brightness:float = 1, r_offset:float = 0, r_shift_x:int = 0, r_shift_y:int = 0,
-		g_flip:bool = False, g_mirror:bool = False, g_invert:bool = False, g_brightness:float = 1, g_offset:float = 0, g_shift_x:int = 0, g_shift_y:int = 0,
-		b_flip:bool = False, b_mirror:bool = False, b_invert:bool = False, b_brightness:float = 1, b_offset:float = 0, b_shift_x:int = 0, b_shift_y:int = 0):
+		r_flip:bool = False, r_mirror:bool = False, r_invert:bool = False, r_gamma:float = 1, r_brightness:float = 1, r_offset:float = 0, r_shift_x:int = 0, r_shift_y:int = 0,
+		g_flip:bool = False, g_mirror:bool = False, g_invert:bool = False, g_gamma:float = 1, g_brightness:float = 1, g_offset:float = 0, g_shift_x:int = 0, g_shift_y:int = 0,
+		b_flip:bool = False, b_mirror:bool = False, b_invert:bool = False, b_gamma:float = 1, b_brightness:float = 1, b_offset:float = 0, b_shift_x:int = 0, b_shift_y:int = 0):
 		
 		frame      = cv2_imread(filePath, cv2_IMREAD_COLOR)
 		outname    = outFullPath(filePath, "png")
@@ -124,13 +124,14 @@ class ImageProcessor(QObject):
 		fprocessor.percentage.connect(self.percentage.emit)
 
 		frame      = fprocessor.process(frame,
-			r_flip, r_mirror, r_invert, r_brightness, r_offset, r_shift_x, r_shift_y,
-			g_flip, g_mirror, g_invert, g_brightness, g_offset, g_shift_x, g_shift_y,
-			b_flip, b_mirror, b_invert, b_brightness, b_offset, b_shift_x, b_shift_y,
+			r_flip, r_mirror, r_invert, r_gamma, r_brightness, r_offset, r_shift_x, r_shift_y,
+			g_flip, g_mirror, g_invert, g_gamma, g_brightness, g_offset, g_shift_x, g_shift_y,
+			b_flip, b_mirror, b_invert, b_gamma, b_brightness, b_offset, b_shift_x, b_shift_y,
 		)
-		print(outname)
+
 		cv2_imwrite(outname, frame)
 		cv2_destroyAllWindows()
+		debugPrint(f"Image out : {outname}")
 		debugPrint("done")
 
 class FrameProcessor(QObject):
@@ -142,9 +143,9 @@ class FrameProcessor(QObject):
 		self.do_counts      = 0
 
 	def process(self, frame, 
-		r_flip:bool = False, r_mirror:bool = False, r_invert:bool = False, r_brightness:float = 1, r_offset:float = 0, r_shift_x:int = 0, r_shift_y:int = 0,
-		g_flip:bool = False, g_mirror:bool = False, g_invert:bool = False, g_brightness:float = 1, g_offset:float = 0, g_shift_x:int = 0, g_shift_y:int = 0,
-		b_flip:bool = False, b_mirror:bool = False, b_invert:bool = False, b_brightness:float = 1, b_offset:float = 0, b_shift_x:int = 0, b_shift_y:int = 0):
+		r_flip:bool = False, r_mirror:bool = False, r_invert:bool = False, r_gamma:float = 1, r_brightness:float = 1, r_offset:float = 0, r_shift_x:int = 0, r_shift_y:int = 0,
+		g_flip:bool = False, g_mirror:bool = False, g_invert:bool = False, g_gamma:float = 1, g_brightness:float = 1, g_offset:float = 0, g_shift_x:int = 0, g_shift_y:int = 0,
+		b_flip:bool = False, b_mirror:bool = False, b_invert:bool = False, b_gamma:float = 1, b_brightness:float = 1, b_offset:float = 0, b_shift_x:int = 0, b_shift_y:int = 0):
 
 		do_flip_mirror = sum([(r_mirror or r_flip), (g_mirror or g_flip), (b_mirror or b_flip)])
 		do_color       = sum([1 for c in [(r_brightness, r_offset),  (g_brightness, g_offset),  (b_brightness, b_offset)]  if not(c == (1, 0))])
@@ -160,9 +161,9 @@ class FrameProcessor(QObject):
 		gcp.step.connect(self.updateProgress)
 		bcp.step.connect(self.updateProgress)
 
-		frame_r = rcp.process(frame_r, r_flip, r_mirror, r_invert, r_brightness, r_offset, r_shift_x, r_shift_y)
-		frame_g = gcp.process(frame_g, g_flip, g_mirror, g_invert, g_brightness, g_offset, g_shift_x, g_shift_y)
-		frame_b = bcp.process(frame_b, b_flip, b_mirror, b_invert, b_brightness, b_offset, b_shift_x, b_shift_y)
+		frame_r = rcp.process(frame_r, r_flip, r_mirror, r_invert, r_gamma, r_brightness, r_offset, r_shift_x, r_shift_y)
+		frame_g = gcp.process(frame_g, g_flip, g_mirror, g_invert, g_gamma, g_brightness, g_offset, g_shift_x, g_shift_y)
+		frame_b = bcp.process(frame_b, b_flip, b_mirror, b_invert, b_gamma, b_brightness, b_offset, b_shift_x, b_shift_y)
 		frame   = cv2_merge ((frame_b, frame_g, frame_r))
 		self.percentage.emit(100.0)
 		QCoreApplication.processEvents()
@@ -180,12 +181,12 @@ class ChannelProcessor(QObject):
 	def __init__(self):
 		super(ChannelProcessor, self).__init__()
 		
-	def process(self, frame, flip:bool = False, mirror:bool = False, invert:bool = False, brightness:float = 1, offset:float = 0, shift_x:int = 0, shift_y:int = 0):
-
+	def process(self, frame, flip:bool = False, mirror:bool = False, invert:bool = False, gamma:float = 1, brightness:float = 1, offset:float = 0, shift_x:int = 0, shift_y:int = 0):
 		do_flip_mirror = None
 		do_flip_mirror =  1 if [flip, mirror] == [False,  True] else do_flip_mirror
 		do_flip_mirror = -1 if [flip, mirror] == [True,   True] else do_flip_mirror
 		do_flip_mirror =  0 if [flip, mirror] == [True,  False] else do_flip_mirror
+		do_gamma       = False if gamma == 1 else True
 		do_color       =  not((brightness, offset) == (1, 0))
 		do_shift       =  not((shift_x,   shift_y) == (0, 0))
 		
@@ -195,6 +196,10 @@ class ChannelProcessor(QObject):
 
 		if invert:
 			frame = cv2_bitwise_not(frame)
+			self.step.emit()
+
+		if do_gamma:
+			frame = np.power(frame, gamma).clip(0,255).astype(np.uint8)
 			self.step.emit()
 
 		if do_color:
@@ -246,7 +251,7 @@ if __name__ == '__main__':
 	# 	)
 	for f in vs:
 		vProcessor.process(f,
-			r_flip = False,  r_mirror = False,  r_invert = False, r_brightness = 1, r_offset = 0, r_shift_x =    0, r_shift_y  = 0,
-			g_flip = True,   g_mirror = False,  g_invert = False, g_brightness = 1, g_offset = 0, g_shift_x =   -4,  g_shift_y = 0,
-			b_flip = False,  b_mirror = False,  b_invert = False, b_brightness = 1, b_offset = 0, b_shift_x =    0,  b_shift_y = 0,
+			r_flip = False,  r_mirror = False,  r_invert = False, r_gamma = 1, r_brightness = 1, r_offset = 0, r_shift_x =    0, r_shift_y  = 0,
+			g_flip = True,   g_mirror = False,  g_invert = False, g_gamma = 1, g_brightness = 1, g_offset = 0, g_shift_x =   -4,  g_shift_y = 0,
+			b_flip = False,  b_mirror = False,  b_invert = False, b_gamma = 1, b_brightness = 1, b_offset = 0, b_shift_x =    0,  b_shift_y = 0,
 		)

@@ -183,7 +183,6 @@ class TaskListView(QListWidget):
 			links = []
 			for url in event.mimeData().urls():
 				links.append(str(url.toLocalFile()))
-			print (links)
 			self.addVideoItems(links)
 		else:
 			event.ignore()
@@ -225,6 +224,7 @@ class RGBTuneWidget(QWidget):
 			r_flip       = r_value["flip"],
 			r_mirror     = r_value["mirror"],
 			r_invert     = r_value["invert"],
+			r_gamma      = r_value["gamma"],
 			r_brightness = r_value["brightness"],
 			r_offset     = r_value["offset"],
 			r_shift_x    = r_value["shift_x"],
@@ -232,6 +232,7 @@ class RGBTuneWidget(QWidget):
 			g_flip       = g_value["flip"],
 			g_mirror     = g_value["mirror"],
 			g_invert     = g_value["invert"],
+			g_gamma      = g_value["gamma"],
 			g_brightness = g_value["brightness"],
 			g_offset     = g_value["offset"],
 			g_shift_x    = g_value["shift_x"],
@@ -239,6 +240,7 @@ class RGBTuneWidget(QWidget):
 			b_flip       = b_value["flip"],
 			b_mirror     = b_value["mirror"],
 			b_invert     = b_value["invert"],
+			b_gamma      = b_value["gamma"],
 			b_brightness = b_value["brightness"],
 			b_offset     = b_value["offset"],
 			b_shift_x    = b_value["shift_x"],
@@ -255,20 +257,22 @@ class ChannelTuneWidget(QWidget):
 		self._spinComboFrame    = QVBoxLayout() 
 		self._frame             = QHBoxLayout()
 		self._title             = QLabel(title)
-		self._flipCheck         = QCheckBox("Flip Channel")
-		self._mirrorCheck       = QCheckBox("Mirror Channel")
-		self._invertCheck       = QCheckBox("Invert Channel")
-		
-		self._channelBrightness = SlideSpinCombo("Brightness",   0, 20, 10, 1, 0)
-		self._channelOffest     = SlideSpinCombo("Offest",       0, 20, 10, 1, 0)
-		self._channelShiftX     = SlideSpinCombo("Shift X",    -20, 20,  0, 1, 0)
-		self._channelShiftY     = SlideSpinCombo("Shift Y",    -20, 20,  0, 1, 0)
+		self._flipCheck         = QCheckBox("Flip")
+		self._mirrorCheck       = QCheckBox("Mirror")
+		self._invertCheck       = QCheckBox("Invert")
+
+		self._channelGamma      = SlideSpinCombo("Gamma",        0,   2,  1, 0.1, 2)
+		self._channelBrightness = SlideSpinCombo("Brightness",   0,   4,  1, 0.1, 2)
+		self._channelOffest     = SlideSpinCombo("Offest",    -255, 255,  0,   1, 0)
+		self._channelShiftX     = SlideSpinCombo("Shift X",    -20,  20,  0,   1, 0)
+		self._channelShiftY     = SlideSpinCombo("Shift Y",    -20,  20,  0,   1, 0)
 
 		self._titleFrame.addWidget(self._title)
 		self._checkFrame.addWidget(self._flipCheck)
 		self._checkFrame.addWidget(self._mirrorCheck)
 		self._checkFrame.addWidget(self._invertCheck)
 
+		self._spinComboFrame.addWidget(self._channelGamma)
 		self._spinComboFrame.addWidget(self._channelBrightness)
 		self._spinComboFrame.addWidget(self._channelOffest)
 		self._spinComboFrame.addWidget(self._channelShiftX)
@@ -288,6 +292,7 @@ class ChannelTuneWidget(QWidget):
 			flip       = self._flipCheck.isChecked(),
 			mirror     = self._mirrorCheck.isChecked(),
 			invert     = self._invertCheck.isChecked(),
+			gamma      = self._channelGamma.value(),
 			brightness = self._channelBrightness.value(),
 			offset     = self._channelOffest.value(),
 			shift_x    = self._channelShiftX.value(),
@@ -298,41 +303,51 @@ class SlideSpinCombo(QWidget):
 	value_changed = pyqtSignal(float)
 	def __init__(self, title:str = "", min_value:float = 0, max_value:float = 100, default_value = 0, step:float = 1 , decimal:int = 2, ):
 		super().__init__()
-		self._value   = default_value
-		self._label   = QLabel(title)
-		self._spinbox = QDoubleSpinBox()
-		self._slide   = QSlider()
-		self._reset   = QPushButton("reset")
-		self._grid    = QGridLayout()
-
+		self._title         = title
+		self._min_value     = min_value
+		self._max_value     = max_value
+		self._default_value = default_value
+		self._step          = step
+		self._value         = default_value
+		self._decimal       = decimal
+		self._label         = QLabel(title)
+		self._spinbox       = QDoubleSpinBox()
+		self._slide         = QSlider()
+		self._reset         = QPushButton("reset")
+		self._grid          = QGridLayout()
+		self.val2SlideVal   = lambda val : int((val - self._min_value) / self._step)
+		self.slideVal2Val   = lambda val : round((val * self._step) + self._min_value, self._decimal)
+		
 		self._slide.setOrientation(Qt.Horizontal)
-		self._slide.setMaximum (max_value)
-		self._slide.setMinimum  (min_value)
-		self._slide.setPageStep (step)
-		self._slide.setSliderPosition (default_value)
+		self._slide.setPageStep (1)
+		self._slide.setMinimum (self.val2SlideVal(min_value))
+		self._slide.setMaximum (self.val2SlideVal(max_value))
+		self._slide.setSliderPosition (self.val2SlideVal(default_value))
+
 		self._spinbox.setRange(min_value, max_value)
 		self._spinbox.setSingleStep (step)
 		self._spinbox.setDecimals (decimal)
 		self._spinbox.setValue(default_value)
 
-		self._slide.valueChanged.connect(   lambda val: self.value_changed.emit(round(val, decimal)))
+		self._slide.valueChanged.connect(   lambda val: self.value_changed.emit(round(self.slideVal2Val(val), decimal)))
 		self._spinbox.valueChanged.connect( lambda val: self.value_changed.emit(round(val, decimal)))
 		self._reset.clicked.connect(        lambda    : self.value_changed.emit(default_value))
-		self.value_changed.connect(        lambda val : self.setValue(val))
+		self.value_changed.connect(         lambda val: self.setValue(val))
 		self._grid.addWidget(self._label,   0, 0, 1, 1)
 		self._grid.addWidget(self._slide,   0, 1, 1, 1)
 		self._grid.addWidget(self._spinbox, 0, 2, 1, 1)
 		self._grid.addWidget(self._reset,   0, 3, 1, 1)
 		self._grid.setColumnMinimumWidth (0, 60)
-		self._grid.setColumnMinimumWidth (2, 70)
+		self._grid.setColumnMinimumWidth (2, 50)
+
 		self._grid.setContentsMargins    (5,0,0,0)
+		self._reset.setFixedWidth(35)
 		self.setLayout(self._grid)
 
 	def setValue(self, val):
-
 		self.blockSignals(True)
-		self._value = val
-		self._slide.setValue(int(val))
+		self._value  = val
+		self._slide.setValue(self.val2SlideVal(val))
 		self._spinbox.setValue(val)
 		self.blockSignals(False)
 
